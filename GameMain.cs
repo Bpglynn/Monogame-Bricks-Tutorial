@@ -33,8 +33,7 @@ namespace BricksGameTutorial
         private Ball ball;
         private bool readyToServeBall = true;
         private int ballsRemaining = 3;
-
-        private bool useBloom = true;
+        private Ball staticBallIcon;
         #endregion
 
         #region Initialize/Content load
@@ -44,7 +43,7 @@ namespace BricksGameTutorial
 
             graphics = new GraphicsDeviceManager(this);
 
-            // Set game to 502x700 or screen max if smaller
+            // Set game to 502x700 or screen max if smaller.
             screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width; // Get current screen width
             screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height; // Get current screen height
             if (screenWidth >= 502)
@@ -96,6 +95,7 @@ namespace BricksGameTutorial
             wall = new Wall(1, 50, spriteBatch, gameContent); // Create walls of bricks
             gameBorder = new GameBorder(screenWidth, screenHeight, spriteBatch, gameContent); // Game play field borders
             ball = new Ball(screenWidth, screenHeight, spriteBatch, gameContent); // Game ball
+            staticBallIcon = new Ball(screenWidth, screenHeight, spriteBatch, gameContent) { X = 25, Y = 25, Visible = true, UseRotation = false }; // Static display ball for UI
         }
         #endregion
 
@@ -165,12 +165,6 @@ namespace BricksGameTutorial
             // Update particles
             ParticleManager.Update();
 
-            // Toggle bloom
-            if (newKeyboardState.IsKeyDown(Keys.B))
-            {
-                useBloom = !useBloom;
-            }
-
             base.Update(gameTime);
         }
 
@@ -182,11 +176,12 @@ namespace BricksGameTutorial
         {
             GraphicsDevice device = graphics.GraphicsDevice;
             Viewport viewport = device.Viewport;
+
             bloom.BeginDraw();
 
             GraphicsDevice.Clear(Color.Black);
 
-            spriteBatch.Begin(); // Everything below will be drawn to buffer
+            spriteBatch.Begin(); // Everything in this sprite batch will have the bloom effect applied
             paddle.Draw();
             wall.Draw();
             gameBorder.Draw();
@@ -204,8 +199,40 @@ namespace BricksGameTutorial
                     readyToServeBall = true;
                 }
             }
-            spriteBatch.End(); // Everything will be drawn to screen from buffer
+            spriteBatch.End();
+
             base.Draw(gameTime);
+
+            // UI stuff
+            spriteBatch.Begin(); // Everything in this sprite batch will NOT have the bloom effect applied
+            staticBallIcon.Draw();
+            string scoreMsg = "Score: " + ball.Score.ToString("00000");
+            Vector2 space = gameContent.labelFont.MeasureString(scoreMsg);
+            spriteBatch.DrawString(gameContent.labelFont, scoreMsg, new Vector2((screenWidth - space.X) / 2, screenHeight - 40), Color.White);
+            if (ball.bricksCleared >= 70)
+            {
+                ball.Visible = false;
+                ball.bricksCleared = 0;
+                wall = new Wall(1, 50, spriteBatch, gameContent);
+                readyToServeBall = true;
+            }
+            if (readyToServeBall)
+            {
+                if (ballsRemaining > 0)
+                {
+                    string startMsg = "Press <Space> or Click Mouse to Start";
+                    Vector2 startSpace = gameContent.labelFont.MeasureString(startMsg);
+                    spriteBatch.DrawString(gameContent.labelFont, startMsg, new Vector2((screenWidth - startSpace.X) / 2, screenHeight / 2), Color.White);
+                }
+                else
+                {
+                    string endMsg = "Game Over";
+                    Vector2 endSpace = gameContent.labelFont.MeasureString(endMsg);
+                    spriteBatch.DrawString(gameContent.labelFont, endMsg, new Vector2((screenWidth - endSpace.X) / 2, screenHeight / 2), Color.White);
+                }
+            }
+            spriteBatch.DrawString(gameContent.labelFont, ballsRemaining.ToString(), new Vector2(40, 10), Color.White);
+            spriteBatch.End();
         }
 
         private void ServeBall() // Start new round

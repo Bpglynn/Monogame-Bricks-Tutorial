@@ -71,6 +71,7 @@ namespace BricksGameTutorial
             {
                 return;  // Ball already exists, ignore 
             }
+            PlaySound(gameContent.startSound);
             Visible = true;
             X = x;
             Y = y;
@@ -92,26 +93,29 @@ namespace BricksGameTutorial
             {
                 X = 1;
                 XVelocity = XVelocity * -1;
+                PlaySound(gameContent.wallBounceSound);
             }
             if (X > ScreenWidth - Width + 5)
             {
                 X = ScreenWidth - Width + 5;
                 XVelocity = XVelocity * -1;
+                PlaySound(gameContent.wallBounceSound);
             }
             if (Y < 1)
             {
                 Y = 1;
                 YVelocity = YVelocity * -1;
+                PlaySound(gameContent.wallBounceSound);
             }
             if (Y + Height > ScreenHeight)
             {
                 Visible = false;
                 Y = 0;
+                PlaySound(gameContent.missSound);
                 return false;
             }
             // Check for paddle collision
             // Paddle is 70 pixels wide. Divide it into segments that will determine the angle of the bounce
-
             Rectangle paddleRect = new Rectangle((int)paddle.X, (int)paddle.Y, (int)paddle.Width, (int)paddle.Height);
             Rectangle ballRect = new Rectangle((int)X, (int)Y, (int)Width, (int)Height);
             if (HitTest(paddleRect, ballRect))
@@ -179,6 +183,7 @@ namespace BricksGameTutorial
                             Rectangle brickRect = new Rectangle((int)brick.X, (int)brick.Y, (int)brick.Width, (int)brick.Height);
                             if (HitTest(ballRect, brickRect))
                             {
+                                PlaySound(gameContent.brickSound);
                                 brick.Explode();
                                 brick.Visible = false;
                                 Score = Score + 7 - i;
@@ -206,6 +211,7 @@ namespace BricksGameTutorial
         }
         public void PaddleHit()
         {
+            PlaySound(gameContent.paddleBounceSound);
             for (int k = 0; k < 16; k++)
             {
                 float speed = 18f * (1f - 1 / randomNum.NextFloat(1f, 10f));
@@ -218,6 +224,14 @@ namespace BricksGameTutorial
                 // Pass in brick position and color for particles
                 GameMain.ParticleManager.CreateParticle(gameContent.lParticle, new Vector2(X, Y), Color.White, 24, 0.5f, state);
             }
+        }
+
+        public static void PlaySound(SoundEffect sound)
+        {
+            float volume = 0.5f;
+            float pitch = 0.0f;
+            float pan = 0.0f;
+            sound.Play(volume, pitch, pan);
         }
     }
 }
